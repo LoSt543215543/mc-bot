@@ -1,0 +1,18 @@
+{
+  "exact": [
+    "nigger", "nigga", "n1gger", "n1gga", "nigg3r", "n!gger",
+    "faggot", "fag", "fagg1t", "f@ggot", "faqqot",
+    "kike", "kyke", "chink", "gook", "wetback", "beaner",
+    "retard", "tard", "cunt", "whore", "slut", "bitch",
+    "kill yourself", "kys", "hang yourself"
+  ],
+  "patterns": [
+    "n+[i1!|l]+g+[e3a4@]+r*",
+    "n+[i1!|l]+g+[u]+h*",
+    "f+[a4@]+g+[o0e3i1!]*t*",
+    "k+[i1!|]+k+[e3]",
+    "r+[e3]+t+[a4@]+r+d+",
+    "k+y+s+",
+    "k+i+l+l+\\s*y+o+u+r+s+e+l+f+"
+  ]
+}

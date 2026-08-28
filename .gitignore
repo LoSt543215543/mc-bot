@@ -1,0 +1,5 @@
+node_modules/
+.pm2/
+*.log
+voice-worker/target/
+.DS_Store

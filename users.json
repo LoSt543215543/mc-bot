@@ -1,0 +1,17 @@
+{
+  "lost543215543": {
+    "username": "LoSt543215543",
+    "hash": "$2b$10$WX1he8UglEODLRoIScnD9.sddoXqqaTPwj9.DTwdLD7PeSEdxSyyC",
+    "role": "admin"
+  },
+  "testuser": {
+    "username": "testuser",
+    "hash": "$2b$10$V5PGLLDeRpQ68SXCrFtm1u4Ra5Z17T291EQmvv8y9VSj4eIfjroUG",
+    "role": "user"
+  },
+  "lost54321": {
+    "username": "LoSt54321",
+    "hash": "$2b$10$Uus4QXYav3DvYMZMxVhS5u1mx0lYTyMXb.Lqp/s0hkWYY4/FGLsom",
+    "role": "admin"
+  }
+}

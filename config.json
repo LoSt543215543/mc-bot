@@ -1,0 +1,23 @@
+{
+  "admins": [
+    "lost54321",
+    "lost543215543",
+    "LoSt54321",
+    "LoSt543215543",
+    "server",
+    "console",
+    "dashboard"
+  ],
+  "djWhitelist": [
+    "lost54321",
+    "lost543215543",
+    "LoSt54321",
+    "LoSt543215543"
+  ],
+  "whitelist": [
+    "lost54321",
+    "lost543215543",
+    "LoSt54321",
+    "LoSt543215543"
+  ]
+}

@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minecraft Bot Command Center</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    :root {
+      --bg: #121214;
+      --card-bg: #1a1a1e;
+      --border: #29292e;
+      --accent: #8257e5;
+      --green: #04d361;
+      --red: #e83f5b;
+      --text: #e1e1e6;
+      --muted: #a8a8b3;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      gap: 12px;
+      overflow: hidden;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    header h1 {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    #status-bar {
+      font-size: 13px;
+      font-family: monospace;
+      color: var(--green);
+      font-weight: bold;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 12px;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .viewer-pane {
+      background: #000;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .viewer-pane iframe {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    .control-pane {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-height: 0;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    #console {
+      flex: 1;
+      background: #09090a;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 12px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      line-height: 1.4;
+      color: var(--muted);
+      min-height: 140px;
+    }
+
+    .cmd-bar {
+      display: flex;
+      gap: 6px;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      background: #202024;
+      border: 1px solid #323238;
+      border-radius: 6px;
+      color: white;
+      padding: 8px 12px;
+      font-size: 13px;
+      outline: none;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--accent);
+    }
+
+    button {
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 14px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 13px;
+      transition: opacity 0.2s;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    .dpad-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .dpad-row {
+      display: flex;
+      gap: 4px;
+    }
+
+    .key-btn {
+      width: 46px;
+      height: 40px;
+      background: #29292e;
+      color: var(--text);
+      font-size: 13px;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      -webkit-user-select: none;
+      border-radius: 4px;
+      transition: background 0.1s, transform 0.1s;
+    }
+
+    .key-btn.active {
+      background: var(--accent);
+      color: white;
+      transform: scale(0.95);
+    }
+
+    .radio-box {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .ptt-btn {
+      background: var(--green);
+      color: #09090a;
+      font-weight: 900;
+      padding: 10px 16px;
+      border-radius: 6px;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .ptt-btn.active {
+      background: var(--red);
+      color: white;
+      transform: scale(0.96);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Minecraft Bot Command Center</h1>
+    <div id="status-bar">Authenticating...</div>
+  </header>
+
+  <div class="main-grid">
+    <div class="viewer-pane">
+      <iframe id="viewer-frame" src="" style="width: 100%; height: 100%; border: none;"></iframe>
+    </div>
+
+    <div class="control-pane">
+      <div class="card">
+        <div style="font-size: 12px; color: var(--muted); margin-bottom: 8px; text-align: center;">
+          Keyboard <strong>W, A, S, D</strong> + <strong>Space</strong> / <strong>Shift</strong>
+        </div>
+        <div class="dpad-container">
+          <button class="key-btn" data-key="forward">W</button>
+          <div class="dpad-row">
+            <button class="key-btn" data-key="left">A</button>
+            <button class="key-btn" data-key="back">S</button>
+            <button class="key-btn" data-key="right">D</button>
+          </div>
+          <div class="dpad-row" style="margin-top: 4px;">
+            <button class="key-btn" data-key="jump" style="width: 70px;">SPACE</button>
+            <button class="key-btn" data-key="sneak" style="width: 70px;">SHIFT</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card radio-box">
+        <div>
+          <div style="font-weight: bold; font-size: 14px; color: var(--accent);">📻 Web Radio</div>
+          <div id="radio-status" style="font-size: 11px; color: var(--muted);">Hold button to talk in-game</div>
+        </div>
+        <button class="ptt-btn" id="ptt-button">PUSH TO TALK</button>
+      </div>
+
+      <div id="console"></div>
+
+      <div class="cmd-bar">
+        <input type="text" id="cmd-input" placeholder="Type a command (!say, !stasis, !help)..." />
+        <button onclick="sendCmd()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let activeUsername = 'User';
+    const consoleEl = document.getElementById('console');
+    const statusBar = document.getElementById('status-bar');
+    const cmdInput = document.getElementById('cmd-input');
+
+    function appendLog(text, color) {
+      const line = document.createElement('div');
+      line.textContent = text;
+      if (color) line.style.color = color;
+      consoleEl.appendChild(line);
+      consoleEl.scrollTop = consoleEl.scrollHeight;
+    }
+
+    // Verify session
+    fetch('/api/me')
+      .then(res => res.json())
+      .then(data => {
+        if (data.user) {
+          activeUsername = data.user.username;
+          statusBar.textContent = `ONLINE // ${data.user.username} (${data.user.role.toUpperCase()})`;
+          statusBar.style.color = 'var(--green)';
+        }
+      })
+      .catch(() => {});
+
+    const socket = io({ withCredentials: true });
+
+    socket.on('connect', () => {
+      appendLog('[+] Connected to Bot Command Center', '#04d361');
+    });
+
+    socket.on('disconnect', () => {
+      statusBar.textContent = 'DISCONNECTED';
+      statusBar.style.color = 'var(--red)';
+      appendLog('[-] Connection lost. Reconnecting...', '#e83f5b');
+    });
+
+    socket.on('log', (msg) => appendLog(msg));
+    socket.on('chat', ({ sender, message }) => appendLog(`[Chat] ${sender}: ${message}`, '#e1e1e6'));
+    socket.on('status', (data) => {
+      if (typeof data === 'string') {
+        statusBar.textContent = data;
+      } else if (data && data.health !== undefined) {
+        statusBar.textContent = `${activeUsername} | HP: ${data.health} | Pos: ${data.pos || '--'}`;
+      }
+    });
+
+    function sendCmd() {
+      const text = cmdInput.value.trim();
+      if (!text) return;
+      socket.emit('command', text);
+      appendLog(`> ${text}`, '#8257e5');
+      cmdInput.value = '';
+    }
+
+    cmdInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') sendCmd();
+    });
+
+    const activeControls = {};
+    const keyMap = {
+      'KeyW': 'forward', 'ArrowUp': 'forward',
+      'KeyS': 'back', 'ArrowDown': 'back',
+      'KeyA': 'left', 'ArrowLeft': 'left',
+      'KeyD': 'right', 'ArrowRight': 'right',
+      'Space': 'jump', 'ShiftLeft': 'sneak', 'ShiftRight': 'sneak'
+    };
+
+    function setControl(state, value) {
+      if (activeControls[state] === value) return;
+      activeControls[state] = value;
+      socket.emit('control', { state, value });
+
+      const btn = document.querySelector(`.key-btn[data-key="${state}"]`);
+      if (btn) {
+        if (value) btn.classList.add('active');
+        else btn.classList.remove('active');
+      }
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (document.activeElement === cmdInput) return;
+      const action = keyMap[e.code];
+      if (action) {
+        e.preventDefault();
+        setControl(action, true);
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      if (document.activeElement === cmdInput) return;
+      const action = keyMap[e.code];
+      if (action) {
+        e.preventDefault();
+        setControl(action, false);
+      }
+    });
+
+    document.querySelectorAll('.key-btn').forEach((btn) => {
+      const state = btn.getAttribute('data-key');
+      const start = (e) => { e.preventDefault(); setControl(state, true); };
+      const stop = (e) => { e.preventDefault(); setControl(state, false); };
+
+      btn.addEventListener('mousedown', start);
+      btn.addEventListener('mouseup', stop);
+      btn.addEventListener('mouseleave', stop);
+      btn.addEventListener('touchstart', start, { passive: false });
+      btn.addEventListener('touchend', stop, { passive: false });
+    });
+
+    const pttBtn = document.getElementById('ptt-button');
+    const radioStatus = document.getElementById('radio-status');
+    let audioCtx = null;
+    let micStream = null;
+    let processor = null;
+
+    async function startRadio() {
+      try {
+        pttBtn.classList.add('active');
+        radioStatus.textContent = 'Transmitting...';
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
+        micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        const source = audioCtx.createMediaStreamSource(micStream);
+        processor = audioCtx.createScriptProcessor(4096, 1, 1);
+
+        processor.onaudioprocess = (e) => {
+          const inputData = e.inputBuffer.getChannelData(0);
+          const pcm16 = new Int16Array(inputData.length);
+          for (let i = 0; i < inputData.length; i++) {
+            let s = Math.max(-1, Math.min(1, inputData[i]));
+            pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+          }
+          socket.emit('radio_pcm', pcm16.buffer);
+        };
+
+        source.connect(processor);
+        processor.connect(audioCtx.destination);
+      } catch (err) {
+        radioStatus.textContent = 'Mic Error: ' + err.message;
+        stopRadio();
+      }
+    }
+
+    function stopRadio() {
+      pttBtn.classList.remove('active');
+      radioStatus.textContent = 'Hold button to talk in-game';
+      if (processor) { processor.disconnect(); processor = null; }
+      if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
+      if (audioCtx) { audioCtx.close(); audioCtx = null; }
+      socket.emit('radio_stop');
+    }
+
+    pttBtn.addEventListener('mousedown', startRadio);
+    pttBtn.addEventListener('mouseup', stopRadio);
+    pttBtn.addEventListener('mouseleave', stopRadio);
+    pttBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startRadio(); }, { passive: false });
+    pttBtn.addEventListener('touchend', (e) => { e.preventDefault(); stopRadio(); }, { passive: false });
+
+    (function initViewer() {
+      const frame = document.getElementById('viewer-frame');
+      if (!frame) return;
+      if (window.location.hostname.endsWith('loglabs.dev')) {
+        frame.src = 'https://viewer.loglabs.dev';
+      } else {
+        frame.src = 'https://' + window.location.hostname + ':3001';
+      }
+    })();
+  </script>
+</body>
+</html>
